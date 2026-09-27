@@ -1,0 +1,10 @@
+{
+  "name": "glosswork-mcpb",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dependencies bundled into the Glosswork Claude Desktop extension. Nothing here is published to npm.",
+  "license": "MIT",
+  "dependencies": {
+    "mcp-remote": "0.14.2"
+  }
+}

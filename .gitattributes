@@ -1,0 +1,4 @@
+* text=auto eol=lf
+
+# Real content, but never worth reading in a pull request diff.
+uv.lock linguist-generated=true -diff

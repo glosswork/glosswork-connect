@@ -1,0 +1,30 @@
+{
+  "name": "glosswork",
+  "displayName": "Glosswork",
+  "version": "0.2.0",
+  "description": "Connect Claude Code to a Glosswork workspace, and load the schema design skill.",
+  "author": {
+    "name": "Heavylift Labs"
+  },
+  "license": "MIT",
+  "keywords": [
+    "glosswork",
+    "mcp",
+    "records"
+  ],
+  "userConfig": {
+    "address": {
+      "type": "string",
+      "title": "Workspace address",
+      "description": "The MCP address of your Glosswork workspace, ending in /mcp.",
+      "required": true
+    },
+    "token": {
+      "type": "string",
+      "title": "Access token",
+      "description": "An access token created on your workspace's Setup page, named for this tool.",
+      "sensitive": true,
+      "required": true
+    }
+  }
+}

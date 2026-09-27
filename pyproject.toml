@@ -1,0 +1,38 @@
+[project]
+name = "glosswork-connect"
+version = "0.1.0"
+description = "The Glosswork connection kit: packaging and guidance that connect an agent harness to a workspace."
+requires-python = ">=3.13"
+dependencies = []
+
+# Nothing here is installed as a library. The tests read files in this repository, so
+# there is no package to build and uv should not try to build one.
+[tool.uv]
+package = false
+
+[dependency-groups]
+# Both verified as the current stable release on PyPI on 2026-09-15 with
+# `uv run --with pip pip index versions <pkg>`, not carried from memory.
+dev = [
+    "pytest==9.1.1",
+    "ruff==0.16.7",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# The harness tests need Docker, Node and the product image, which CI does not carry, so
+# they are excluded by default and `uv run pytest -q` stays the whole-suite command.
+# The local gate is `GLOSSWORK_HARNESS=1 uv run pytest -q -m harness`. The variable is
+# what makes it honest: without it a missing prerequisite skips, and pytest exits 0 on a
+# machine that ran nothing.
+addopts = "-m 'not harness'"
+markers = [
+    "harness: runs the built bundle against a real workspace. Needs Docker, Node, the cscheide/gw image and macOS. Never runs in CI.",
+]

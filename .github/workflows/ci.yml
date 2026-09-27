@@ -1,0 +1,87 @@
+# Glosswork connection kit CI.
+#
+# Everything in this repository is a file whose shape matters: a manifest, a skill, a
+# document. So the whole suite is structural and cheap, and every job runs on every
+# push to main and every pull request. There is no path filter, because there is nothing
+# here expensive enough to be worth skipping, and a filter that misfires costs more than
+# the seconds it saves.
+#
+# One real check does NOT run here: `claude plugin validate . --strict` needs the Claude
+# Code CLI, which this image does not carry. AGENTS.md and the pull request template make
+# it a local gate, the same way a macOS-only check would be.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # So a run can be started without a commit, if Actions was off when main was pushed.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    container: ghcr.io/astral-sh/uv:python3.13-bookworm-slim
+    env:
+      UV_LINK_MODE: copy
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: uv sync --frozen
+      # Two commands, deliberately two steps. `ruff check` passes on its own, which is
+      # exactly how `ruff format --check` goes unrun for several changes at a time. As
+      # separate steps each exit code is read separately and a failure names its own half.
+      - run: uv run --frozen ruff check .
+      - run: uv run --frozen ruff format --check .
+
+  test:
+    needs: lint
+    runs-on: ubuntu-24.04
+    container: ghcr.io/astral-sh/uv:python3.13-bookworm-slim
+    env:
+      UV_LINK_MODE: copy
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: uv sync --frozen
+      - run: uv run --frozen pytest -q
+
+  # Secret scanning, on top of tests/test_no_credentials.py. The test states the rule in
+  # this repository's own terms and fails fast; gitleaks catches credential shapes nobody
+  # here thought to write a pattern for, in every commit rather than only the tree. It
+  # fails the pipeline on a finding. GitHub's own secret scanning is not available to a
+  # private repository on this plan without a paid add-on, so this is the scanner until the
+  # repository is public. A credential in a kit that people install is the worst defect it
+  # can ship.
+  #
+  # The same job checks commit identity. Every commit here is authored and committed as
+  # hello@glosswork.dev, because a personal address in a public repository's history cannot
+  # be taken back. GitHub's own committer on a merge made in its web UI is allowed.
+  secrets:
+    needs: lint
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Install gitleaks 8.30.1, checked against its published SHA-256
+        run: |
+          cd "$RUNNER_TEMP"
+          curl -sSfL -o gitleaks.tar.gz \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  gitleaks.tar.gz" | sha256sum -c -
+          tar -xzf gitleaks.tar.gz gitleaks
+      - run: '"$RUNNER_TEMP/gitleaks" git . --redact --no-banner --exit-code 1'
+      - name: Every commit carries the company identity
+        run: |
+          bad=$(git log --format='%ae%n%ce' | sort -u | grep -v -x -e hello@glosswork.dev -e noreply@github.com || true)
+          if [ -n "$bad" ]; then
+            echo "::error::a commit carries an identity other than hello@glosswork.dev"
+            exit 1
+          fi

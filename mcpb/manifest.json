@@ -1,0 +1,53 @@
+{
+  "manifest_version": "0.4",
+  "name": "glosswork",
+  "display_name": "Glosswork",
+  "version": "0.1.0",
+  "description": "Connect Claude Desktop to a Glosswork workspace on this machine or your own network.",
+  "long_description": "Glosswork is a structured workspace an agent can read and write over MCP. Claude's own connector dialog reaches a hosted workspace; this extension is for one running on your own machine or on your own network, which that dialog cannot reach. It asks for two values, the workspace address and an access token, and replaces hand-editing claude_desktop_config.json.",
+  "author": {
+    "name": "Heavylift Labs"
+  },
+  "license": "MIT",
+  "keywords": [
+    "glosswork",
+    "mcp",
+    "workspace"
+  ],
+  "server": {
+    "type": "node",
+    "entry_point": "node_modules/mcp-remote/dist/proxy.js",
+    "mcp_config": {
+      "command": "node",
+      "args": [
+        "${__dirname}/node_modules/mcp-remote/dist/proxy.js",
+        "${user_config.address}",
+        "--allow-http",
+        "--transport",
+        "http-only",
+        "--header",
+        "Authorization:Bearer ${GLOSSWORK_TOKEN}",
+        "--header",
+        "X-Agent-Label:claude-desktop"
+      ],
+      "env": {
+        "GLOSSWORK_TOKEN": "${user_config.token}"
+      }
+    }
+  },
+  "user_config": {
+    "address": {
+      "type": "string",
+      "title": "Workspace address",
+      "description": "The workspace's MCP address, ending in /mcp. Spell it exactly the way the workspace prints it at startup: localhost and 127.0.0.1 are different addresses to a workspace, and the wrong one fails with 421 Invalid Host header, which says nothing about the address. Warning: an http:// address that is not on this machine sends your access token across the network in clear text, where anything else on that network can read it. Use one only on a network you trust.",
+      "required": true
+    },
+    "token": {
+      "type": "string",
+      "title": "Access token",
+      "description": "An access token you create on the workspace's Setup page, named for this extension. Claude Desktop keeps it in the operating system's secure storage and passes it to the proxy through an environment variable, so it never appears in the process list.",
+      "sensitive": true,
+      "required": true
+    }
+  }
+}

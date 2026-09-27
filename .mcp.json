@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "glosswork": {
+      "type": "http",
+      "url": "${user_config.address}",
+      "headers": {
+        "Authorization": "Bearer ${user_config.token}",
+        "X-Agent-Label": "claude-code"
+      }
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "glosswork",
+  "owner": {
+    "name": "Heavylift Labs"
+  },
+  "description": "The Glosswork connection kit: connect an agent harness to a Glosswork workspace.",
+  "plugins": [
+    {
+      "name": "glosswork",
+      "source": "./",
+      "displayName": "Glosswork",
+      "description": "Connect Claude Code to a Glosswork workspace, and load the schema design skill.",
+      "license": "MIT",
+      "keywords": [
+        "glosswork",
+        "mcp",
+        "records"
+      ]
+    }
+  ]
+}

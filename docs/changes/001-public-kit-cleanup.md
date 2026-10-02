@@ -585,4 +585,41 @@ accepted below is folded into the text above.
 
 ## Deviations from the approved plan
 
+The build ran on 2026-10-02. Every image step ran against
+`docker.io/glosswork/glosswork:latest` at digest
+`sha256:66b88b181b3012f92e3a51854237ab3327a5c4b7480c3191c8409529ae33a82d`, pulled before each
+run (steps 0, 1, 2, 7, 8 and 10). Claude Code on npm was 2.1.288 that day, newer than the
+2.1.287 the premises name, so step 11 applied.
+
+- **Deviation 1. Claude Code 2.1.288, not 2.1.287.** Steps 9, 10 and 11 ran on 2.1.288 in
+  `node:22-bookworm` containers, and the README and AGENTS.md name 2.1.288. P2, P3, P4 and P5
+  held on it: the GitHub install copies 36 files; a used clone added as a directory copies
+  695 files and 32 MB, `.venv`, `.pytest_cache` and `.ruff_cache` included; the duplicate
+  project server appears from a clone root and not from `/`; with `.claude/settings.json`
+  it is gone, `claude mcp get glosswork` reports it "Rejected", and validate exits 0. The
+  premises above keep the version they were measured on.
+- **Deviation 2. P6 was re-measured too.** Step 11 names P2 to P5 only. Because the AGENTS.md command
+  row names a version, P6 was also run on 2.1.288 (macOS, `env -i`, scratch directories):
+  validate exits 0 and leaves `.claude.json` and `backups` in the configuration directory.
+- **Deviation 3. The README named 2.1.288 at step 4, before step 10 measured it.** The version was
+  read from npm at step 4 and written then; steps 10 and 11 then measured the install, the
+  connection and the copy behaviour on that version, and all held, so the text stands.
+- **Deviation 4. Step 1's README test stops at its first assertion.** On the unfixed tree it failed
+  on the marketplace command, so the stale phrases were checked separately with the test's
+  own `STALE_README_PHRASES`: all six were present.
+- **Deviation 5. Step 9's capture tool.** The raw capture was taken with Python's `pty` module and
+  rendered with `pyte` 0.8.2, a terminal emulator library, rather than with `script`, which
+  hung for the plan run. On the rendered first screen "Let's get started." is a line; the
+  raw bytes hold it as `Let's`, a cursor move, `get`, a cursor move, `started.`, and
+  `grep -c -F` for the whole line in the raw capture prints 0.
+- **Deviation 6. "Pilot" in test text.** "What does not change" keeps the generic word in one test
+  docstring; there are two, in `tests/test_mcpb_manifest.py` (the compatibility block test)
+  and `tests/test_mcpb_bundle.py` (the scratch workspace fixture). No item of "What changes"
+  names either, so both stay as they were.
+- **Deviation 7. Step 13 has not happened yet.** It is the maintainer's. Until it does,
+  CONTRIBUTING carries no sentence about GitHub secret scanning and push protection, and
+  AC14 is not proven.
+- **Deviation 8. These deviations were written after step 12, not one at a time as each happened.**
+  Each records what the step's own output showed, which is kept in the build's evidence.
+
 ## Durable content moved out of this plan

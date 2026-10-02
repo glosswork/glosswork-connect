@@ -19,17 +19,19 @@ to a database.
 | Install | `uv sync` |
 | Test | `uv run pytest -q` |
 | Lint | `uv run ruff check .` and `uv run ruff format --check .`, as two commands |
-| Validate the plugin and the marketplace | `claude plugin validate . --strict` |
+| Validate the plugin and the marketplace | `env -i PATH="$PATH" HOME="$(mktemp -d)" CLAUDE_CONFIG_DIR="$(mktemp -d)" claude plugin validate . --strict` |
 | Build the Claude Desktop extension | `bash mcpb/build.sh` |
 | Run the harness tests | `GLOSSWORK_HARNESS=1 uv run pytest -q -m harness` |
 
 `claude plugin validate` needs the Claude Code CLI, which CI does not carry, so it is a
 local gate. Run it whenever you touch `.claude-plugin/` or `.mcp.json`, and say in the pull
-request that you did.
+request that you did. It runs under `env -i` with a scratch `HOME` and `CLAUDE_CONFIG_DIR`
+because validate writes a `.claude.json` and a `backups` directory into the configuration
+directory (measured on Claude Code 2.1.288), and without a scratch directory that is your own.
 
 The harness tests are a local gate for the same reason: CI's image carries neither Node nor
 Docker. They need Docker, Node, the product image and macOS, they start and remove their own
-scratch workspace, and they never touch a pilot's. `GLOSSWORK_HARNESS=1` is not optional; see
+scratch workspace, and they never touch a real workspace. `GLOSSWORK_HARNESS=1` is not optional; see
 the trap below.
 
 ## Where things are
@@ -116,6 +118,23 @@ Each of these cost this project real time at least once.
   carries that index's URL, which is a disclosure in a public repository. Lock with
   `UV_NO_CONFIG=1 uv lock`. `tests/test_lockfile.py` fails on any host in the lock other
   than `pypi.org` and `files.pythonhosted.org`.
+- **A raw terminal capture of Claude Code's screen cannot prove what it showed.** Claude
+  Code draws its screen with cursor movements, so words that sit on one line on the screen
+  are apart in the captured bytes. Measured on Claude Code 2.1.288: "Let's get started."
+  was on the rendered first screen and nowhere in the raw capture, which held each word
+  after its own cursor move. Render a screen through a terminal emulator before anyone
+  reads it or greps it.
+- **Claude Code copies the whole plugin directory into its configuration directory,
+  `docs/changes/` included** (measured on Claude Code 2.1.288). So no file in this
+  repository writes the access token prefix whole, a plan file included: a plan that did
+  would land in every installing person's configuration directory, and a search of that
+  directory for the token prefix would match the plan instead of the token.
+- **A Claude Code session started in a clone of this repository would offer the plugin's
+  server a second time.** The repository root is the plugin root, so `.mcp.json` is also a
+  project server there, with a literal `${user_config.address}` as its address; approving
+  it would send that placeholder. `.claude/settings.json` turns it off with
+  `disabledMcpjsonServers`, and the plugin's own server is unaffected (measured on Claude
+  Code 2.1.288). Do not remove that file.
 - **A plugin's paths cannot escape the plugin directory.** There is no `../` in a manifest
   path. That is why the repository root is the plugin root, and why `skills/` sits at the
   top level rather than inside a subdirectory.

@@ -9,7 +9,7 @@ traps. This file is only about process.
 
 ## Roles
 
-**Maintainer** means Chris. The maintainer approves a plan before it is executed, and
+**Maintainer** means Heavylift Labs, which publishes Glosswork. The maintainer approves a plan before it is executed, and
 approves and merges the pull request afterward.
 
 ## One change at a time
@@ -45,7 +45,7 @@ approves and merges the pull request afterward.
 9. **Push once, and open the pull request once**, not as a draft, using the pull request
    template in `.github/pull_request_template.md`. Its description carries the plan's final
    text, the Accept output, every deviation and the closeout. One push, one pull request,
-   one CI run. Chris merges.
+   one CI run. The maintainer merges.
 
 ## Branches and commits
 
@@ -55,7 +55,25 @@ approves and merges the pull request afterward.
 - `main` is protected. Everything lands by pull request, and the `lint`, `test` and
   `secrets` checks must pass first; the protection applies to administrators too. GitHub
   cannot tell an agent from the maintainer, because the agent's token acts as the
-  maintainer's own account, so "Chris merges" is a rule that GitHub does not enforce.
+  maintainer's own account, so "the maintainer merges" is a rule that GitHub does not
+  enforce.
+- The `secrets` check runs gitleaks 8.30.1, downloaded and checked against its published
+  SHA-256, over every commit on every branch the CI checkout fetched, not only the pull
+  request's, and fails on any finding. The same job fails on any commit that is not authored
+  and committed as `hello@glosswork.dev`; GitHub's own committer on a merge made in its web
+  page is allowed. On a pull request run it examines the pull request's own commits and
+  ignores the temporary merge commit GitHub makes for the run, which is authored as
+  whichever account opened the pull request and never enters the history. On a push to
+  `main`, or a run started by hand, it examines the whole checked-out history, merge commits
+  included. It fails on a shallow checkout, on a run that examined no commits, and on any
+  other event.
+- GitHub's own secret scanning and push protection are turned on for this repository, in its
+  settings, as the maintainer configured them. They are settings, not files, so nothing in
+  this repository proves them, and the `secrets` check above is the gate that the code does
+  prove.
+- A merge in the web page uses "Create a merge commit", with `hello@glosswork.dev` chosen as
+  the commit email, never squash or rebase, so the merge commit is authored as
+  `hello@glosswork.dev` and committed by GitHub.
 - One exception is already spent: the first commit on GitHub, which moved the kit here as
   one commit and therefore could not come through a pull request.
 

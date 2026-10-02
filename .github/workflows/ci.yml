@@ -55,14 +55,22 @@ jobs:
   # Secret scanning, on top of tests/test_no_credentials.py. The test states the rule in
   # this repository's own terms and fails fast; gitleaks catches credential shapes nobody
   # here thought to write a pattern for, in every commit rather than only the tree. It
-  # fails the pipeline on a finding. GitHub's own secret scanning is not available to a
-  # private repository on this plan without a paid add-on, so this is the scanner until the
-  # repository is public. A credential in a kit that people install is the worst defect it
-  # can ship.
+  # fails the pipeline on a finding, and it is the gate a pull request cannot pass without.
+  # GitHub's own secret scanning and push protection are repository settings, described in
+  # CONTRIBUTING.md. A credential in a kit that people install is the worst defect it can
+  # ship.
   #
   # The same job checks commit identity. Every commit here is authored and committed as
   # hello@glosswork.dev, because a personal address in a public repository's history cannot
   # be taken back. GitHub's own committer on a merge made in its web UI is allowed.
+  #
+  # On a pull request run the checkout is GitHub's temporary merge commit, which GitHub
+  # makes for the run and which never enters the repository's history. It is authored as
+  # whichever account opened the pull request, so the check skips it and examines the pull
+  # request's own commits instead: everything reachable from the pull request's head that
+  # is not on the base. A push or a run started by hand examines the whole history of what
+  # it checked out, merge commits included. Any other event fails, so a new trigger cannot
+  # pass this check without being taught to it.
   secrets:
     needs: lint
     runs-on: ubuntu-24.04
@@ -79,9 +87,43 @@ jobs:
           tar -xzf gitleaks.tar.gz gitleaks
       - run: '"$RUNNER_TEMP/gitleaks" git . --redact --no-banner --exit-code 1'
       - name: Every commit carries the company identity
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          bad=$(git log --format='%ae%n%ce' | sort -u | grep -v -x -e hello@glosswork.dev -e noreply@github.com || true)
+          if [ "$(git rev-parse --is-shallow-repository)" != "false" ]; then
+            echo "::error::the checkout is shallow, so the identity check cannot see every commit"
+            exit 1
+          fi
+          case "$EVENT" in
+            pull_request)
+              # HEAD is GitHub's temporary merge commit. Its second parent must be the pull
+              # request's head, or this is not the checkout the check was written for.
+              second=$(git rev-parse -q --verify 'HEAD^2' || true)
+              if [ -z "$PR_HEAD_SHA" ] || [ "$second" != "$PR_HEAD_SHA" ]; then
+                echo "::error::HEAD is not GitHub's merge of the pull request head '$PR_HEAD_SHA'"
+                exit 1
+              fi
+              range='HEAD^1..HEAD^2'
+              ;;
+            push | workflow_dispatch)
+              range='HEAD'
+              ;;
+            *)
+              echo "::error::the identity check does not know the event '$EVENT', so it fails rather than pass unchecked"
+              exit 1
+              ;;
+          esac
+          examined=$(git rev-list --count "$range")
+          echo "Commits examined for event $EVENT ($range): $examined"
+          if [ "$examined" -eq 0 ]; then
+            echo "::error::the identity check examined no commits"
+            exit 1
+          fi
+          bad=$(git log --format='%ae%n%ce' "$range" | sort -u | grep -v -x -e hello@glosswork.dev -e noreply@github.com || true)
           if [ -n "$bad" ]; then
             echo "::error::a commit carries an identity other than hello@glosswork.dev"
+            git log --format='%h author %ae committer %ce' "$range" \
+              | awk '($3 != "hello@glosswork.dev" && $3 != "noreply@github.com") || ($5 != "hello@glosswork.dev" && $5 != "noreply@github.com")'
             exit 1
           fi

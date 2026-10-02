@@ -74,7 +74,7 @@ const server = http.createServer((request, response) => {
 
   if (mode === 'metadata' && path === '/register') {
     json(response, 201, {
-      client_id: 'conn05-stub-client',
+      client_id: 'kit-harness-stub-client',
       redirect_uris: [`${origin}/callback`],
       token_endpoint_auth_method: 'none',
       grant_types: ['authorization_code', 'refresh_token'],

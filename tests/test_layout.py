@@ -1,5 +1,6 @@
 """The kit's shape: the directories and files every other change builds on."""
 
+import json
 from pathlib import Path
 
 import pytest
@@ -61,3 +62,12 @@ def test_every_skill_declares_a_name_and_a_description() -> None:
         front_matter = text.split("---", 2)[1]
         assert "name:" in front_matter, f"{skill_file} declares no name"
         assert "description:" in front_matter, f"{skill_file} declares no description"
+
+
+def test_the_clone_does_not_offer_the_plugins_server_as_a_project_server() -> None:
+    """The repository root is the plugin root, so a Claude Code session started in a clone
+    would also read `.mcp.json` as a project server, with a literal
+    `${user_config.address}`. The project setting turns exactly those servers off."""
+    settings = json.loads((REPO_ROOT / ".claude" / "settings.json").read_text("utf-8"))
+    servers = json.loads((REPO_ROOT / ".mcp.json").read_text("utf-8"))["mcpServers"]
+    assert settings["disabledMcpjsonServers"] == list(servers)

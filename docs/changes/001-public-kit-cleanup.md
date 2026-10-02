@@ -621,5 +621,10 @@ run (steps 0, 1, 2, 7, 8 and 10). Claude Code on npm was 2.1.288 that day, newer
   AC14 is not proven.
 - **Deviation 8. These deviations were written after step 12, not one at a time as each happened.**
   Each records what the step's own output showed, which is kept in the build's evidence.
+- **Deviation 9. AC6 no longer spells the maintainer's surname.** The verifier found that the
+  check wrote the surname as a split literal, which would leave it in the public history once the
+  branch is merged, and no done-when clause asks for that check. It is dropped. The other
+  fragments stay because the clause about the personal image name and the first name needs them,
+  and both already appear in public history.
 
 ## Durable content moved out of this plan

@@ -4,7 +4,7 @@
 | --- | --- |
 | Issue | #1 (to be filed after plan approval) |
 | Branch | `1-public-kit-cleanup` |
-| Depends on | Nothing to merge first. Before the build starts: the Claude Desktop version the extension was installed in. Before any step that runs the image: `docker.io/glosswork/glosswork:latest` is published (checklist step 0) |
+| Depends on | Nothing to merge first. Before any step that runs the image: `docker.io/glosswork/glosswork:latest` is published (checklist step 0) |
 
 This is GitHub change 1. It is not "archive 001", which was numbered by the private archive
 (see `docs/changes/README.md`). Issue and pull request numbers share one sequence on GitHub,
@@ -46,7 +46,7 @@ extension is "not yet installed in Claude Desktop" and lines 65 to 68 that it "h
 installed in Claude Desktop yet". `.github/ISSUE_TEMPLATE/bug.md` line 19 asks whether the
 install came from "a local clone, or a file that was sent". The Claude Desktop install was
 made by the maintainer on 2026-10-02; that is the maintainer's statement, not a measurement
-this change made, and the Claude Desktop version is not yet known (see Depends on).
+this change made. The README does not name a Claude Desktop version.
 
 **P2. The marketplace installs from GitHub by its short name, and that install copies only
 the repository's files.** Measured: `claude plugin marketplace add glosswork/glosswork-connect`
@@ -228,11 +228,10 @@ exit 0.
    - Line 29: "paste the address, then paste the token as an `Authorization` header" and
      nothing about a second header. The label rides on the token, as line 60 already says.
    - Lines 17 and 65 to 68: the "not yet installed" and "has not been installed" statements
-     are replaced by what is true: installed in Claude Desktop (version supplied by the
-     maintainer) on macOS on 2026-10-02, with the harness measurements of 2026-09-18 still
-     credited to the harness tests. If the maintainer does not supply a version, the README
-     says it was installed on that date and names no version, and the plan records that as a
-     deviation. Line 17 keeps its clear-text warning.
+     are replaced by plain text that agrees with the install page: build the bundle, open it,
+     and Claude Desktop installs it and asks for the two values. No Claude Desktop version is
+     named. The harness measurements of 2026-09-18 stay credited to the harness tests. Line
+     17 keeps its clear-text warning.
    - The Claude Code connection claims that were measured on 2.1.274 (Keychain storage, the
      masked field, survival across restart) keep their 2.1.274 label. This change re-measures
      only the install path and a connection on Linux (checklist step 10), and the README

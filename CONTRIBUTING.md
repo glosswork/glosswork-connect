@@ -62,6 +62,10 @@ approves and merges the pull request afterward.
   request's, and fails on any finding. The same job fails on any commit in the checked-out
   history that is not authored and committed as `hello@glosswork.dev`; GitHub's own
   committer on a merge made in its web page is allowed.
+- GitHub's own secret scanning and push protection are turned on for this repository, in its
+  settings, as the maintainer configured them. They are settings, not files, so nothing in
+  this repository proves them, and the `secrets` check above is the gate that the code does
+  prove.
 - A merge in the web page uses "Create a merge commit", with `hello@glosswork.dev` chosen as
   the commit email, never squash or rebase, so the merge commit is authored as
   `hello@glosswork.dev` and committed by GitHub.

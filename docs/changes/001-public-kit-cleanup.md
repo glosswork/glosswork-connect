@@ -4,7 +4,7 @@
 | --- | --- |
 | Issue | #1 (to be filed after plan approval) |
 | Branch | `1-public-kit-cleanup` |
-| Depends on | Nothing to merge first. Before the build starts: the Claude Desktop version the extension was installed in, and the maintainer's answer to the decision in "What changes", item 6. Before any step that runs the image: `docker.io/glosswork/glosswork:latest` is published (checklist step 0) |
+| Depends on | Nothing to merge first. Before the build starts: the Claude Desktop version the extension was installed in. Before any step that runs the image: `docker.io/glosswork/glosswork:latest` is published (checklist step 0) |
 
 This is GitHub change 1. It is not "archive 001", which was numbered by the private archive
 (see `docs/changes/README.md`). Issue and pull request numbers share one sequence on GitHub,
@@ -78,15 +78,7 @@ approval`. From `/` it lists only the plugin's server. On macOS with the plugin 
 not configured, the same `glosswork: ${user_config.address}` line appears from the clone root
 and nothing appears outside it.
 
-**P5. Moving the server into `plugin.json` would remove that line, but would change the
-plugin's shape.** Measured in a scratch copy: with `.mcp.json`'s `mcpServers` moved into
-`.claude-plugin/plugin.json` and `.mcp.json` deleted, `claude plugin validate . --strict`
-exits 0 and `claude mcp list` from the clone root lists no project server. Not measured: that
-the plugin's server then connects to a real workspace with the person's two values. Three
-tests and two documents name `.mcp.json` (`tests/test_manifests.py` lines 67, 78 and 86,
-`tests/test_layout.py` line 43, `AGENTS.md`, `README.md`).
-
-**P5a. A project setting removes that line without changing the plugin.** Measured in the
+**P5. A project setting removes that line without changing the plugin.** Measured in the
 same Linux container setup as P4, Claude Code 2.1.287: with a `.claude/settings.json` at the
 clone root holding `{"disabledMcpjsonServers": ["glosswork"]}`, `claude mcp list` from the
 clone root lists only `plugin:glosswork:glosswork`, and `claude mcp get glosswork` reports the
@@ -274,7 +266,7 @@ exit 0.
    request cannot pass without, and that GitHub's own secret scanning and push protection
    are repository settings, described in CONTRIBUTING. No step changes.
 
-6. **`AGENTS.md`.**
+6. **`AGENTS.md` and `.claude/settings.json`.**
    - Commands: the validate row becomes
      `env -i PATH="$PATH" HOME="$(mktemp -d)" CLAUDE_CONFIG_DIR="$(mktemp -d)" claude plugin validate . --strict`,
      with one sentence on why (P6), naming the Claude Code version.
@@ -285,29 +277,17 @@ exit 0.
      (b) Claude Code copies the whole plugin directory, `docs/changes/` included, into the
      configuration directory, so no file in this repository writes the token prefix whole
      (P7);
-     (c) a Claude Code session started in a clone of this repository sees the plugin's
-     `.mcp.json` as a project server with a literal `${user_config.address}`. Its wording
-     follows the decision below: with option A, it says why `.claude/settings.json` exists
-     and not to remove it; with option B, it says not to approve the prompt.
+     (c) a Claude Code session started in a clone of this repository would see the plugin's
+     `.mcp.json` as a project server with a literal `${user_config.address}`, which is why
+     `.claude/settings.json` exists; do not remove it (P5).
    - Harness wording: line 32's "they never touch a pilot's" becomes "they never touch a real
      workspace".
-   - **Decision for the maintainer.** The requirement that a Claude Code session in a clone
-     not offer the plugin's server a second time can be met three ways:
-     - **A. (Recommended) A project setting.** Add `.claude/settings.json` holding
-       `{"disabledMcpjsonServers": ["glosswork"]}` (P5a), a structural test that the name it
-       disables is the key in `.mcp.json`'s `mcpServers`, and trap (c) explaining the file.
-       Measured to make `claude mcp list` from the clone root list no `glosswork` server
-       other than the plugin's, which meets the requirement's stronger form, while the
-       plugin, its manifests and its tests stay as they are. Its cost is one tracked file
-       that every contributor's Claude Code session in a clone obeys. It is recommended over
-       B because it removes the prompt rather than documenting it, for the same small
-       amount of work. The plan's first draft recommended B, before P5a was measured.
-     - **B. A trap only.** Trap (c) tells contributors not to approve the prompt. No new
-       file. The prompt stays for everyone who opens a clone in Claude Code.
-     - **C. Move the server into `.claude-plugin/plugin.json`** and delete `.mcp.json` (P5).
-       Removes the prompt, but changes the plugin's shape, three tests and two documents,
-       and needs a real connection re-proven. Not recommended in this change, which is about
-       text and tests.
+   - **`.claude/settings.json`** (new), holding `{"disabledMcpjsonServers": ["glosswork"]}`
+     (P5), decided by the maintainer on 2026-10-02. With it, a Claude Code session in a clone
+     does not offer the plugin's server a second time, and `claude mcp list` from the clone
+     root lists no `glosswork` server other than `plugin:glosswork:glosswork`, while the
+     plugin, its manifests and its tests stay as they are. Its cost is one tracked file that
+     every contributor's Claude Code session in a clone obeys.
 
 7. **`mcpb/.mcpbignore`** (new): `/build.sh`, `/README.md` and `/package-lock.json`, each
    anchored to the bundle root (P16). The last is already excluded by the packer and is
@@ -336,7 +316,7 @@ exit 0.
      `claude plugin marketplace add glosswork/glosswork-connect`, and does not contain
      `<path to a clone`, "second header", "private until", "a file sent", "not yet installed
      in Claude Desktop" or "installed in Claude Desktop yet".
-   - With option A only: `tests/test_layout.py`, `test_the_clone_does_not_offer_the_plugins_server_as_a_project_server`:
+   - `tests/test_layout.py`, `test_the_clone_does_not_offer_the_plugins_server_as_a_project_server`:
      `.claude/settings.json` parses, and its `disabledMcpjsonServers` is exactly the list of
      keys of `.mcp.json`'s `mcpServers`.
    - The internal references of P10a go: the docstrings and comments say the plain reason
@@ -350,8 +330,8 @@ exit 0.
 
 - No behavior of the plugin, `.mcp.json`, `.claude-plugin/`, `mcpb/manifest.json`,
   `mcpb/package.json`, `mcpb/build.sh`, the skills, or the guidance hashes. So
-  `claude plugin validate` is run as a local fence, not as evidence of a change. Option A
-  adds `.claude/settings.json`, which is not a plugin file; validate is run with it present.
+  `claude plugin validate` is run as a local fence, not as evidence of a change. The new
+  `.claude/settings.json` is not a plugin file; validate is run with it present.
 - The CI jobs and their ids (`lint`, `test`, `secrets`), their steps and the pinned gitleaks
   version and checksum. Only a comment in `ci.yml` changes.
 - The README statements measured on Claude Code 2.1.274 keep that version.
@@ -405,7 +385,7 @@ exit 0.
    - `uv run pytest -q tests/test_mcpb_manifest.py`: the `.mcpbignore` test fails (no file).
      The rewritten warning test passes on `main`, which is expected; its proof is the
      mutation in step 6.
-   - With option A: `uv run pytest -q tests/test_layout.py -k project_server` fails (no
+   - `uv run pytest -q tests/test_layout.py -k project_server` fails (no
      `.claude/settings.json`).
    - `rm -rf mcpb/dist && GLOSSWORK_HARNESS=1 uv run pytest -q -m harness`: the bundle
      root-entries test fails naming `README.md` and `build.sh`; the manifest identity test
@@ -436,10 +416,10 @@ exit 0.
     install, configure against a scratch workspace from the `:latest` image with a scratch
     token, and record `claude mcp list` showing the plugin's server connected, and the image
     digest. The README status for line 14 names that Claude Code version.
-11. Re-measure P2, P3, P4 and, with option A, P5a on the then-current Claude Code if it is
+11. Re-measure P2, P3, P4 and P5 on the then-current Claude Code if it is
     newer than 2.1.287, and write the version measured into the README paragraph and the
     AGENTS.md traps.
-12. Edit `AGENTS.md` as in item 6, and with option A add `.claude/settings.json`.
+12. Edit `AGENTS.md` and add `.claude/settings.json`, as in item 6.
 13. **The maintainer**, in the GitHub web page. Settings, then Advanced Security (sidebar,
     "Security and quality"): next to Secret Protection click Enable and confirm with "Enable
     Secret Protection"; then, in the Secret Protection section, click Enable next to Push
@@ -519,7 +499,7 @@ read on its own, never through a pipe. AC3, AC4 and AC13 need checklist step 0 t
   `git log origin/main --format='%ae%n%ce' > /tmp/kit-001-main-ids.txt` exits 0, then
   `grep -v -x -e hello@glosswork.dev -e noreply@github.com /tmp/kit-001-main-ids.txt`
   exits 1, and the CI run on the merge commit shows `lint`, `test` and `secrets` succeeded.
-- **AC17. With option A only: no project server inside a clone.** In a Linux container with
+- **AC17. No project server inside a clone.** In a Linux container with
   the then-current Claude Code, the plugin installed from the branch and configured with a
   placeholder, `claude mcp list` run from the clone root prints no line starting
   `glosswork:`, with the Claude Code version recorded.
@@ -548,12 +528,13 @@ accepted below is folded into the text above.
   "a file sent" (lines 7 to 8) was not checked at all. A phrase broken across lines would
   also slip past a line-based check. *Accepted.* The README test collapses whitespace and
   checks both Desktop phrasings and "a file sent"; AC5 greps them.
-- **F5. A third way to meet the project-server requirement, cheaper than either.** A tracked
+- **F5. A cheaper way to stop the duplicate server inside a clone.** A tracked
   `.claude/settings.json` with `disabledMcpjsonServers` removes the duplicate server from
   `claude mcp list` inside a clone, leaves the plugin's own server listed, and passes
-  `validate --strict` (P5a). It meets the requirement's stronger form without touching the
-  plugin. *Deferred to the maintainer*, as option A in item 6, recommended; the plan carries
-  the work for A and for B so it is approvable either way.
+  `validate --strict` (P5). It meets the requirement's stronger form without touching the
+  plugin. *Accepted, decided by the maintainer* on 2026-10-02 and folded into item 6. The
+  alternatives, a warning in AGENTS.md only or moving the server into the plugin manifest,
+  were set aside.
 - **F6. The fresh-clone half of the install requirement.** Pointing the README at GitHub
   solves the problem, but the requirement also allows "install from a fresh clone and say
   why", and someone without GitHub access still uses a local directory. *Accepted.* The

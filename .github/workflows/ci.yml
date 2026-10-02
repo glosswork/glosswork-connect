@@ -55,10 +55,10 @@ jobs:
   # Secret scanning, on top of tests/test_no_credentials.py. The test states the rule in
   # this repository's own terms and fails fast; gitleaks catches credential shapes nobody
   # here thought to write a pattern for, in every commit rather than only the tree. It
-  # fails the pipeline on a finding. GitHub's own secret scanning is not available to a
-  # private repository on this plan without a paid add-on, so this is the scanner until the
-  # repository is public. A credential in a kit that people install is the worst defect it
-  # can ship.
+  # fails the pipeline on a finding, and it is the gate a pull request cannot pass without.
+  # GitHub's own secret scanning and push protection are repository settings, described in
+  # CONTRIBUTING.md. A credential in a kit that people install is the worst defect it can
+  # ship.
   #
   # The same job checks commit identity. Every commit here is authored and committed as
   # hello@glosswork.dev, because a personal address in a public repository's history cannot

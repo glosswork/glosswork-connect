@@ -34,7 +34,21 @@ TOKEN_ENVIRONMENT_VARIABLE = "GLOSSWORK_TOKEN"
 # the feature. These are the three things it cannot be written without saying.
 CLEAR_TEXT_WARNING_TERMS = ("clear text", "network", "token")
 
-WARNING_BEARERS = ("README.md", "mcpb/README.md")
+# Each README's exact warning, matched after whitespace is collapsed. Three words that may
+# appear anywhere in a file guard nothing: a rewrite that kept them and lost the warning
+# would still pass.
+README_WARNINGS = {
+    "README.md": (
+        "A plain `http://` address that is not on this machine sends the token across the"
+        " network in clear text."
+    ),
+    "mcpb/README.md": "A plain HTTP address on your network sends the token in clear text",
+}
+
+# Each pattern is anchored to the bundle root. Unanchored, `README.md` also matches the
+# readme files inside `node_modules/`, which the packer would then strip from the proxy's
+# dependencies.
+BUNDLE_IGNORE_PATTERNS = ["/build.sh", "/README.md", "/package-lock.json"]
 
 
 def load(path: Path) -> Any:
@@ -186,12 +200,18 @@ def test_the_address_field_warns_that_a_network_address_sends_the_token_in_clear
 
 
 def test_the_readme_warns_that_a_network_address_sends_the_token_in_clear_text() -> None:
-    """Q51 makes this a build requirement rather than documentation that can follow
-    later: the extension reaches the network because the warning ships with it."""
-    for relative in WARNING_BEARERS:
-        text = (REPO_ROOT / relative).read_text(encoding="utf-8")
-        missing = missing_warning_terms(text)
-        assert not missing, f"{relative} does not say: {missing}"
+    """The warning is part of the feature: the extension reaches the network only because
+    the warning ships with it. Each README must carry its exact sentence."""
+    for relative, warning in README_WARNINGS.items():
+        text = " ".join((REPO_ROOT / relative).read_text(encoding="utf-8").split())
+        assert warning in text, f"{relative} does not carry its warning: {warning!r}"
+
+
+def test_the_bundle_ignore_file_anchors_each_pattern_to_the_bundle_root() -> None:
+    """The bundle ships what runs, not the script that built it or the README beside it."""
+    lines = (MCPB / ".mcpbignore").read_text(encoding="utf-8").splitlines()
+    patterns = [line.strip() for line in lines if line.strip() and not line.startswith("#")]
+    assert patterns == BUNDLE_IGNORE_PATTERNS
 
 
 def test_the_address_field_says_the_spelling_must_match_the_workspace() -> None:

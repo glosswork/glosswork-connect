@@ -27,6 +27,7 @@ import socket
 import subprocess
 import threading
 import time
+import zipfile
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -40,7 +41,7 @@ SUPPORT = Path(__file__).parent / "support"
 MCPB = REPO_ROOT / "mcpb"
 BUNDLE_FILE = MCPB / "dist" / "glosswork.mcpb"
 
-IMAGE = "cscheide/gw:rev1"
+IMAGE = "docker.io/glosswork/glosswork:latest"
 CONTAINER = "conn05-gw"
 VOLUME = "conn05-data"
 MCPB_VERSION = "2.1.2"
@@ -693,3 +694,31 @@ def test_browser_detector_fires_only_against_a_real_authorization_server(
     else:
         assert result.shim_lines == [], result.shim_lines
         assert result.returncode != 0
+
+
+# --------------------------------------------------------------------------------------
+# What the bundle file carries
+# --------------------------------------------------------------------------------------
+
+
+def bundle_entries() -> list[str]:
+    with zipfile.ZipFile(BUNDLE_FILE) as archive:
+        return archive.namelist()
+
+
+def test_the_bundle_root_holds_only_the_manifest_and_package_json(bundle: Path) -> None:
+    """Read from the zip listing of the file a person installs. The build script and the
+    README stay out, and the proxy's own README stays in, which is what an ignore pattern
+    that is not anchored to the root would strip."""
+    entries = bundle_entries()
+    root_entries = sorted(name for name in entries if "/" not in name)
+    assert root_entries == ["manifest.json", "package.json"], root_entries
+    assert "node_modules/mcp-remote/README.md" in entries
+
+
+def test_the_bundled_manifest_is_the_source_manifest(bundle: Path) -> None:
+    """The structural tests read `mcpb/manifest.json`. They say something about the shipped
+    extension only while the manifest inside the bundle is that file, byte for byte."""
+    with zipfile.ZipFile(BUNDLE_FILE) as archive:
+        shipped = archive.read("manifest.json")
+    assert shipped == (MCPB / "manifest.json").read_bytes()

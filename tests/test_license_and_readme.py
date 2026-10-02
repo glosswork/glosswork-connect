@@ -51,3 +51,26 @@ def test_the_readme_names_the_github_home_and_not_gitlab() -> None:
     readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
     assert "https://github.com/glosswork/glosswork-connect" in readme
     assert "gitlab.com" not in readme
+
+
+# Text that was true while the repository was private, or before the extension was
+# installed in Claude Desktop. Each is matched after whitespace is collapsed, so a phrase
+# broken across lines cannot slip past.
+STALE_README_PHRASES = (
+    "<path to a clone",
+    "second header",
+    "private until",
+    "a file sent",
+    "not yet installed in Claude Desktop",
+    "installed in Claude Desktop yet",
+)
+
+
+def test_the_readme_installs_from_github_and_says_nothing_stale() -> None:
+    """The marketplace is added from GitHub, which copies only the repository's files. A
+    local directory is copied whole, untracked files included, so the README must not send
+    a reader there by default."""
+    readme = " ".join((REPO_ROOT / "README.md").read_text(encoding="utf-8").split())
+    assert "claude plugin marketplace add glosswork/glosswork-connect" in readme
+    present = [phrase for phrase in STALE_README_PHRASES if phrase in readme]
+    assert not present, f"README.md still says: {present}"

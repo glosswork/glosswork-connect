@@ -59,9 +59,14 @@ approves and merges the pull request afterward.
   enforce.
 - The `secrets` check runs gitleaks 8.30.1, downloaded and checked against its published
   SHA-256, over every commit on every branch the CI checkout fetched, not only the pull
-  request's, and fails on any finding. The same job fails on any commit in the checked-out
-  history that is not authored and committed as `hello@glosswork.dev`; GitHub's own
-  committer on a merge made in its web page is allowed.
+  request's, and fails on any finding. The same job fails on any commit that is not authored
+  and committed as `hello@glosswork.dev`; GitHub's own committer on a merge made in its web
+  page is allowed. On a pull request run it examines the pull request's own commits and
+  ignores the temporary merge commit GitHub makes for the run, which is authored as
+  whichever account opened the pull request and never enters the history. On a push to
+  `main`, or a run started by hand, it examines the whole checked-out history, merge commits
+  included. It fails on a shallow checkout, on a run that examined no commits, and on any
+  other event.
 - GitHub's own secret scanning and push protection are turned on for this repository, in its
   settings, as the maintainer configured them. They are settings, not files, so nothing in
   this repository proves them, and the `secrets` check above is the gate that the code does

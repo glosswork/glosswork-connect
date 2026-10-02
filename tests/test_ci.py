@@ -68,5 +68,22 @@ def test_every_commit_is_checked_for_the_company_identity() -> None:
     assert "-e hello@glosswork.dev" in text
 
 
+def test_the_identity_check_skips_only_the_temporary_merge_commit() -> None:
+    """A pull request run examines the pull request's own commits, HEAD^1..HEAD^2, after
+    proving HEAD^2 is the pull request's head. Every other known event examines the whole
+    history, and an unknown event, a shallow checkout or an empty range fails."""
+    text = workflow_text()
+    assert "fetch-depth: 0" in text
+    assert "git rev-parse --is-shallow-repository" in text
+    assert '"$second" != "$PR_HEAD_SHA"' in text
+    assert "range='HEAD^1..HEAD^2'" in text
+    assert "push | workflow_dispatch)" in text
+    assert "range='HEAD'" in text
+    assert "so it fails rather than pass unchecked" in text
+    assert 'if [ "$examined" -eq 0 ]; then' in text
+    assert "grep -v -x -e hello@glosswork.dev -e noreply@github.com || true" in text
+    assert text.count("glosswork.dev") == text.count("hello@glosswork.dev")
+
+
 def test_a_run_can_be_started_by_hand() -> None:
     assert "workflow_dispatch:" in workflow_text()

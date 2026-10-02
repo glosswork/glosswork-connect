@@ -4,17 +4,14 @@ Everything a person installs to connect an agent harness to a Glosswork workspac
 product itself, the server with the MCP endpoint, lives in a separate repository. The kit
 is separate so that work on it never queues behind product work.
 
-This repository is private until the site is live. Until then a pilot installs from a
-local clone or from a file sent to them.
-
 ## The pieces
 
 | Path | Piece | For | Status |
 | --- | --- | --- | --- |
-| `.claude-plugin/marketplace.json` | The kit's own plugin marketplace | Claude Code, added from a local clone | Proven in Claude Code 2.1.274 |
+| `.claude-plugin/marketplace.json` | The kit's own plugin marketplace | Claude Code, added from GitHub as `glosswork/glosswork-connect` | Added from GitHub in Claude Code 2.1.288 |
 | `.claude-plugin/plugin.json`, `.mcp.json` | The `glosswork` Claude Code plugin: it asks for the address and the token, and sets the agent label | Claude Code | Proven in Claude Code 2.1.274 against a running workspace: two prompts, connected, tools listed |
 | `skills/` | Agent Skills, starting with schema design | Every harness that reads a `SKILL.md` | Schema design carries the approved guidance text, pinned by hash, and loads in Claude Code 2.1.274 |
-| `mcpb/` | The Claude Desktop extension, a `.mcpb` bundling a pinned proxy | Claude Desktop, against a workspace on the person's own machine or their own network. **A plain `http://` address on a network sends the access token across it in clear text**, which [`mcpb/README.md`](mcpb/README.md) explains in full | Built and proven against a workspace by the harness tests; not yet installed in Claude Desktop |
+| `mcpb/` | The Claude Desktop extension, a `.mcpb` bundling a pinned proxy | Claude Desktop, against a workspace on the person's own machine or their own network. **A plain `http://` address on a network sends the access token across it in clear text**, which [`mcpb/README.md`](mcpb/README.md) explains in full | Built and proven against a workspace by the harness tests. Open the built file and Claude Desktop installs it and asks for the two values |
 | `connect/` | One connect command that asks for the address and the token, checks them, then writes each harness's config | Codex, Cursor, VS Code | Deferred |
 | `wrappers/` | Thin wrappers that carry the skills folder and no credential | Agent Plugins package, Gemini CLI extension, Pi package | Not built |
 
@@ -26,20 +23,27 @@ loader ignores.
 
 A hosted workspace is reached from Claude Desktop, Cowork, claude.ai and Claude mobile
 through Claude's own "Add custom connector" dialog: paste the address, then paste the token
-as an `Authorization` header, with the agent label as a second header. No plugin, no
-extension, no OAuth. The kit exists for Claude Code, and for a workspace running on the
+as an `Authorization` header. No plugin, no extension, no OAuth. The kit exists for Claude Code, and for a workspace running on the
 person's own machine, which that dialog cannot reach.
 
 ## Connecting Claude Code
 
-Measured on Claude Code 2.1.274 on macOS, on 2026-09-17, against a running workspace.
+Measured on Claude Code 2.1.274 on macOS, on 2026-09-17, against a running workspace. On
+2026-10-02 the install from GitHub and a connection to a running workspace were measured
+again on Claude Code 2.1.288 on Linux. Nothing else in this section was re-measured.
 
-1. Add the marketplace: `claude plugin marketplace add <path to a clone of this repository>`.
+1. Add the marketplace: `claude plugin marketplace add glosswork/glosswork-connect`.
 2. In a Claude Code session, run `/plugin install glosswork@glosswork` and choose user scope.
    Claude Code asks for two values, "Workspace address" and "Access token", and nothing
    else. Running `claude plugin install` from a shell does not ask: it installs the plugin
    without its values, and `/plugin configure glosswork@glosswork` in a session supplies
    them.
+
+Add the marketplace from GitHub, not from a working clone. Claude Code 2.1.288 copies a
+marketplace added from a local directory whole into its configuration directory, untracked
+files included, so a `.venv`, a test cache or a stray token file in the clone travels with
+it. Added from GitHub, it copies only the repository's files. If you must add it from a
+local directory, use a fresh clone with nothing untracked in it.
 
 The token field is masked once it loses focus. While the field has focus, as the token is
 typed or pasted, Claude Code shows its last six characters in clear and the rest as `*`. The
@@ -64,8 +68,9 @@ token itself.
 
 The extension is a `.mcpb` file. Build it, then open it: Claude Desktop installs it and asks
 for the two values. Everything below was measured by the kit's harness tests against a
-running workspace on 2026-09-18. It has not been installed in Claude Desktop yet, and the
-table above says so.
+running workspace on 2026-09-18. The harness tests run against
+`docker.io/glosswork/glosswork:latest`, a tag that moves, so a harness result names the image
+digest it ran against rather than the tag.
 
 ```
 bash mcpb/build.sh
@@ -76,6 +81,7 @@ SHA-256. **Two runs of it produce two files with different digests**, so a diges
 one built file rather than the content of a build. Install the file whose digest was
 recorded rather than building your own and comparing them. **The bundle is unsigned**, so
 Claude Desktop may warn about an unsigned extension or an unknown developer at install time.
+`mcpb/.mcpbignore` keeps the build script and `mcpb/README.md` out of the bundle.
 
 Claude Desktop asks for the workspace address and an access token, and nothing else. The
 token is marked sensitive, so the field is masked and the value goes to the operating

@@ -16,7 +16,8 @@ Never paste a token, a configuration file, or a log line that carries one.
 
 <!--
 The smallest thing that reproduces it, starting from a clean configuration directory.
-Say where the install came from: a local clone, or a file that was sent.
+Say where the install came from: the GitHub marketplace (`glosswork/glosswork-connect`), a
+clone (fresh, or with other files in it), or a `.mcpb` (built from which commit).
 -->
 
 ```

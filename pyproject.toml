@@ -34,5 +34,5 @@ testpaths = ["tests"]
 # machine that ran nothing.
 addopts = "-m 'not harness'"
 markers = [
-    "harness: runs the built bundle against a real workspace. Needs Docker, Node, the cscheide/gw image and macOS. Never runs in CI.",
+    "harness: runs the built bundle against a real workspace. Needs Docker, Node, the docker.io/glosswork/glosswork:latest image and macOS. Never runs in CI.",
 ]

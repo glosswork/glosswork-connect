@@ -3,9 +3,9 @@
 These tests run the manifest's own argument list against the bundle they build, so what
 they measure is the file a person installs rather than a copy of its intentions.
 
-They need Docker, Node, the `cscheide/gw:rev1` image and macOS, so they never run in CI:
-the `harness` marker excludes them by default and `pyproject.toml` records it. Run them
-as the local gate:
+They need Docker, Node, the `docker.io/glosswork/glosswork:latest` image and macOS, so
+they never run in CI: the `harness` marker excludes them by default and `pyproject.toml`
+records it. Run them as the local gate:
 
     GLOSSWORK_HARNESS=1 uv run pytest -q -m harness
 
@@ -42,8 +42,8 @@ MCPB = REPO_ROOT / "mcpb"
 BUNDLE_FILE = MCPB / "dist" / "glosswork.mcpb"
 
 IMAGE = "docker.io/glosswork/glosswork:latest"
-CONTAINER = "conn05-gw"
-VOLUME = "conn05-data"
+CONTAINER = "kit-harness-gw"
+VOLUME = "kit-harness-data"
 MCPB_VERSION = "2.1.2"
 
 # A property of the token's scope, not of the product's tool list: an `admin` token sees
@@ -106,7 +106,7 @@ def bundle(harness_ready: None, tmp_path_factory: pytest.TempPathFactory) -> Pat
     if not BUNDLE_FILE.exists():
         built = run(["bash", str(MCPB / "build.sh")])
         assert built.returncode == 0, built.stderr
-    scratch = tmp_path_factory.mktemp("conn05-bundle")
+    scratch = tmp_path_factory.mktemp("kit-harness-bundle")
     unpacked = scratch / "unpacked"
     unpacked.mkdir()
     result = run(
@@ -162,7 +162,7 @@ def workspace(harness_ready: None, tmp_path_factory: pytest.TempPathFactory) -> 
     allowlist turns itself on, which is what makes the mismatch testable at all, and
     `GW_MCP_ALLOWED_HOSTS` adds the one non-local spelling the --allow-http test needs.
     """
-    scratch = tmp_path_factory.mktemp("conn05-workspace")
+    scratch = tmp_path_factory.mktemp("kit-harness-workspace")
     port = free_port()
 
     # The bootstrap password is generated, written to a file only this user can read, and
@@ -174,7 +174,7 @@ def workspace(harness_ready: None, tmp_path_factory: pytest.TempPathFactory) -> 
             [
                 f"GW_BASE_URL=http://127.0.0.1:{port}",
                 f"GW_MCP_ALLOWED_HOSTS={NON_LOCAL_HOST}:{port}",
-                "GW_BOOTSTRAP_ADMIN_EMAIL=conn05@example.invalid",
+                "GW_BOOTSTRAP_ADMIN_EMAIL=kit-harness@example.invalid",
                 f"GW_BOOTSTRAP_ADMIN_PASSWORD={password}",
                 "",
             ]
@@ -229,8 +229,8 @@ def workspace(harness_ready: None, tmp_path_factory: pytest.TempPathFactory) -> 
         read_token="",
         scratch=scratch,
     )
-    prepared.admin_token = prepared.mint("conn05-desktop", "admin")
-    prepared.read_token = prepared.mint("conn05-read", "read")
+    prepared.admin_token = prepared.mint("kit-harness-desktop", "admin")
+    prepared.read_token = prepared.mint("kit-harness-read", "read")
 
     yield prepared
 
@@ -339,7 +339,7 @@ def proxy_run(
                 "params": {
                     "protocolVersion": "2025-06-18",
                     "capabilities": {},
-                    "clientInfo": {"name": "conn05-harness", "version": "0"},
+                    "clientInfo": {"name": "kit-harness", "version": "0"},
                 },
             }
         )
@@ -579,7 +579,7 @@ def test_host_mismatch_is_a_421_that_names_nothing(
 def test_allow_http_reaches_an_address_that_is_not_on_this_machine(
     bundle: Path, workspace: Workspace, tmp_path: Path
 ) -> None:
-    """Q51. The flag the manifest ships is what lets a person reach a workspace on their
+    """The flag the manifest ships is what lets a person reach a workspace on their
     own network over plain HTTP."""
     result = proxy_run(bundle, workspace.non_local_address, workspace.admin_token, tmp_path)
     assert result.returncode == 0, result.stderr
@@ -590,7 +590,7 @@ def test_allow_http_is_the_only_thing_that_makes_that_work(
     bundle: Path, workspace: Workspace, tmp_path: Path
 ) -> None:
     """The same address with the flag removed. Without it the proxy refuses before it
-    sends anything, which is what the extension did before Q51."""
+    sends anything, which is what the extension did before it shipped the flag."""
     result = proxy_run(
         bundle,
         workspace.non_local_address,
@@ -640,7 +640,7 @@ def test_token_wrong_because_it_expired(bundle: Path, workspace: Workspace, tmp_
     expiry and says to mint a replacement. A past expiry cannot be minted, so this mints
     one a few seconds ahead and waits for it."""
     expires_at = datetime.datetime.now(datetime.UTC) + datetime.timedelta(seconds=5)
-    token = workspace.mint("conn05-expired", "read", expires_at.strftime("%Y-%m-%dT%H:%M:%SZ"))
+    token = workspace.mint("kit-harness-expired", "read", expires_at.strftime("%Y-%m-%dT%H:%M:%SZ"))
     time.sleep(8)
     result = proxy_run(bundle, workspace.address, token, tmp_path)
     assert_failed_without_a_browser(result)
@@ -683,7 +683,7 @@ def test_browser_detector_fires_only_against_a_real_authorization_server(
         # The metadata stub's proxy reaches openBrowser and then waits for a callback
         # that will never arrive, so this one ends on the watchdog rather than on its own.
         result = proxy_run(
-            bundle, f"http://127.0.0.1:{port}/mcp", "conn05-irrelevant", tmp_path, timeout=25
+            bundle, f"http://127.0.0.1:{port}/mcp", "kit-harness-irrelevant", tmp_path, timeout=25
         )
     finally:
         stub.stop()

@@ -29,9 +29,9 @@ EXACT_VERSION = re.compile(r"^\d+\.\d+\.\d+$")
 # the failure non-negotiable 7 exists for.
 TOKEN_ENVIRONMENT_VARIABLE = "GLOSSWORK_TOKEN"
 
-# Q51 accepts one cost for reaching a workspace on the person's own network: on a plain
-# HTTP address the bearer token crosses that network readable. The warning is part of
-# the feature. These are the three things it cannot be written without saying.
+# The extension accepts one cost for reaching a workspace on the person's own network:
+# on a plain HTTP address the bearer token crosses that network readable. The warning is
+# part of the feature. These are the three things it cannot be written without saying.
 CLEAR_TEXT_WARNING_TERMS = ("clear text", "network", "token")
 
 # Each README's exact warning, matched after whitespace is collapsed. Three words that may
@@ -109,7 +109,7 @@ def test_the_address_the_person_types_is_the_address_the_proxy_is_given() -> Non
 
 
 def test_the_proxy_is_allowed_to_reach_a_plain_http_address() -> None:
-    """Q51, 2026-09-18. Without this flag `mcp-remote` refuses any plain HTTP address
+    """Without this flag `mcp-remote` refuses any plain HTTP address
     whose host is not the literal string `localhost` or `127.0.0.1`, so a workspace on
     the person's own network is unreachable by anything they could type."""
     assert "--allow-http" in server_args()
@@ -144,7 +144,7 @@ def test_the_manifest_names_no_host() -> None:
 
 
 def test_the_manifest_declares_no_compatibility_block() -> None:
-    """D4, answered 2026-09-18. Nothing in the bundle is platform specific: it is Node
+    """Nothing in the bundle is platform specific: it is Node
     and one pinned npm package. Declaring the one platform that was measured would stop
     the extension installing for a pilot on Windows for no measured reason, and the
     README is where "only macOS was measured" belongs."""
@@ -192,7 +192,8 @@ def test_the_substituted_token_is_not_mistaken_for_a_literal() -> None:
 
 
 def test_the_address_field_warns_that_a_network_address_sends_the_token_in_clear_text() -> None:
-    """Q51's accepted cost, stated where the person is when they choose an address.
+    """The accepted cost of reaching a workspace on the person's own network, stated where
+    the person is when they choose an address.
     The field description is the only text Claude Desktop shows at that moment."""
     description = manifest()["user_config"]["address"]["description"]
     missing = missing_warning_terms(description)
